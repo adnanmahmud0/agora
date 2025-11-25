@@ -5,7 +5,7 @@ import { MeetingEndedScreen } from '@/components/meeting/MeetingEndedScreen';
 import { VideoDisplay } from '@/components/meeting/VideoDisplay';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import AgoraRTC, { IAgoraRTCClient, ILocalAudioTrack, ILocalVideoTrack, IRemoteUser } from 'agora-rtc-sdk-ng';
+import AgoraRTC, { IAgoraRTCClient, ILocalAudioTrack, ILocalVideoTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 
 
 export default function MeetingInterface() {
@@ -26,7 +26,7 @@ export default function MeetingInterface() {
       const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       clientRef.current = client;
 
-      client.on('user-published', async (user: IRemoteUser, mediaType) => {
+      client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType) => {
         await client.subscribe(user, mediaType);
         if (mediaType === 'video' && user.videoTrack) {
           user.videoTrack.play('remote-video');
@@ -36,14 +36,13 @@ export default function MeetingInterface() {
         }
       });
 
-      client.on('user-unpublished', (user: IRemoteUser, mediaType) => {
+      client.on('user-unpublished', (user: IAgoraRTCRemoteUser, mediaType) => {
         if (mediaType === 'video' && user.videoTrack) {
           user.videoTrack.stop();
         }
       });
 
-      const uid: number | null = null; // let Agora assign
-      await client.join(appId, channelName, token, uid as number | undefined);
+      await client.join(appId, channelName, token);
 
       const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
       const camTrack = await AgoraRTC.createCameraVideoTrack();
