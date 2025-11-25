@@ -1,0 +1,50 @@
+"use client"
+
+import { RegisterCard } from "@/components/register-card";
+import { VerificationCard } from "@/components/verification-card";
+import { useState } from "react";
+
+
+export default function App() {
+  const [showVerification, setShowVerification] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  const handleSignupComplete = (email: string) => {
+    setUserEmail(email);
+    setShowVerification(true);
+  };
+
+  const handleVerificationComplete = () => {
+    window.location.href = "/login";
+  };
+
+  return (
+    <div className="relative w-full min-h-screen overflow-hidden">
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed top-0 left-0 w-full h-full object-cover"
+      >
+        <source
+          src="/video.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Overlay for better readability */}
+      <div className="fixed top-0 left-0 w-full h-full bg-black/20" />
+
+      <div className="relative z-10 flex items-center justify-center w-full min-h-screen py-8">
+        {showVerification ? (
+          <VerificationCard email={userEmail} onVerificationComplete={handleVerificationComplete} />
+        ) : (
+          <RegisterCard onSignupComplete={handleSignupComplete} />
+        )}
+      </div>
+    </div>
+  );
+}
