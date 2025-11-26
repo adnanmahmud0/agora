@@ -10,8 +10,10 @@ import AgoraRTC, { IAgoraRTCClient, ILocalAudioTrack, ILocalVideoTrack, IAgoraRT
 
 export default function MeetingInterface() {
   const searchParams = useSearchParams();
-  const channelName = searchParams.get('channelName') || '';
-  const token = searchParams.get('token') || '';
+  const channelNameParam = searchParams.get('channelName') || '';
+  const tokenParam = searchParams.get('token') || '';
+  const channelName = channelNameParam ? decodeURIComponent(channelNameParam) : '';
+  const token = tokenParam ? decodeURIComponent(tokenParam) : '';
   const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID as string;
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
@@ -23,16 +25,32 @@ export default function MeetingInterface() {
   useEffect(() => {
     const run = async () => {
       if (!appId || !channelName || !token) return;
+      if (typeof window !== 'undefined') {
+        const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        if (!isSecure) {
+          console.error('Agora requires https or localhost for camera/mic.');
+          return;
+        }
+      }
+
       const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       clientRef.current = client;
 
+      client.on('connection-state-change', (cur, prev) => {
+        console.log('Agora connection state:', prev, '->', cur);
+      });
+
       client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType) => {
-        await client.subscribe(user, mediaType);
-        if (mediaType === 'video' && user.videoTrack) {
-          user.videoTrack.play('remote-video');
-        }
-        if (mediaType === 'audio' && user.audioTrack) {
-          user.audioTrack.play();
+        try {
+          await client.subscribe(user, mediaType);
+          if (mediaType === 'video' && user.videoTrack) {
+            user.videoTrack.play('remote-video');
+          }
+          if (mediaType === 'audio' && user.audioTrack) {
+            user.audioTrack.play();
+          }
+        } catch (e) {
+          console.error('Failed to subscribe to remote user:', e);
         }
       });
 
@@ -42,15 +60,23 @@ export default function MeetingInterface() {
         }
       });
 
-      await client.join(appId, channelName, token);
+      try {
+        await client.join(appId, channelName, token);
+      } catch (e) {
+        console.error('Failed to join channel:', e);
+        return;
+      }
 
-      const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
-      const camTrack = await AgoraRTC.createCameraVideoTrack();
-      localAudioRef.current = micTrack;
-      localVideoRef.current = camTrack;
-
-      camTrack.play('local-video');
-      await client.publish([micTrack, camTrack]);
+      try {
+        const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        const camTrack = await AgoraRTC.createCameraVideoTrack();
+        localAudioRef.current = micTrack;
+        localVideoRef.current = camTrack;
+        camTrack.play('local-video');
+        await client.publish([micTrack, camTrack]);
+      } catch (e) {
+        console.error('Failed to create/publish local tracks:', e);
+      }
     };
     run();
 
