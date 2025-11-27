@@ -92,6 +92,8 @@ export default function App() {
   const [joinChannelName, setJoinChannelName] = useState('');
   const [joinToken, setJoinToken] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
+  const [preJoinMicOn, setPreJoinMicOn] = useState(false);
+  const [preJoinCameraOn, setPreJoinCameraOn] = useState(false);
   
   const [formData, setFormData] = useState<MeetingFormData>({
     participantId: '',
@@ -743,12 +745,28 @@ export default function App() {
               <CardDescription>Confirm to join this channel</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="text-sm text-gray-700">
                   <span className="font-medium">Channel:</span> {joinChannelName}
                 </div>
                 <div className="text-xs text-gray-500 break-all p-2 bg-gray-50 rounded border">
                   {joinToken}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPreJoinMicOn((v) => !v)}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium ${preJoinMicOn ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    {preJoinMicOn ? 'Mic On' : 'Mic Off'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreJoinCameraOn((v) => !v)}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium ${preJoinCameraOn ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                  >
+                    {preJoinCameraOn ? 'Camera On' : 'Camera Off'}
+                  </button>
                 </div>
               </div>
             </CardContent>
@@ -758,7 +776,9 @@ export default function App() {
                 disabled={joinLoading}
                 onClick={() => {
                   setIsJoinOpen(false);
-                  router.push(`/meeting?channelName=${encodeURIComponent(joinChannelName)}&token=${encodeURIComponent(joinToken)}`);
+                  const mic = preJoinMicOn ? '1' : '0';
+                  const cam = preJoinCameraOn ? '1' : '0';
+                  router.push(`/meeting?channelName=${encodeURIComponent(joinChannelName)}&token=${encodeURIComponent(joinToken)}&mic=${mic}&cam=${cam}`);
                 }}
               >
                 Join Now

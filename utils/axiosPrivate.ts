@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const axiosPrivate = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.109:1000/api/v1",
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
     headers: { "Content-Type": "application/json" },
 });
 

@@ -11,13 +11,13 @@ export interface ApiUser {
 export interface UsersResponse {
   success: boolean;
   message: string;
-  pagination: {
+  pagination?: {
     total: number;
     limit: number;
     page: number;
     totalPage: number;
   };
-  data: { users: ApiUser[] };
+  data: { users: ApiUser[] } | ApiUser[];
 }
 
 export interface UserListItem {
@@ -30,13 +30,23 @@ export interface UserListItem {
 
 export const fetchUsers = async (): Promise<UserListItem[]> => {
   const res = await axiosPrivate.get<UsersResponse>("/user");
-  const users = res.data.data.users || [];
-  return users.map((u) => ({
+  const raw = res.data.data as { users: ApiUser[] } | ApiUser[];
+  const list: ApiUser[] = Array.isArray(raw) ? raw : raw?.users || [];
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const normalizeAvatar = (url?: string): string => {
+    const v = (url || "").trim().replace(/`/g, "");
+    if (!v) return "";
+    if (/^https?:\/\//i.test(v)) return v;
+    if (v.startsWith("/")) return `${baseUrl}${v}`;
+    return v;
+  };
+
+  return list.map((u) => ({
     id: u._id,
     name: u.name,
     role: u.role,
     email: u.email,
-    avatar: u.image || "",
+    avatar: normalizeAvatar(u.image),
   }));
 };
-
